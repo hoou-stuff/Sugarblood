@@ -1,18 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <h1 style="color:white">TEST</h1>
   <meta charset="UTF-8" />
   <title>Glucose Tracker</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
- <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.min.js"></script>
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Recharts (fixed version) -->
+  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.min.js"></script>
+
   <style>
-    body { margin:0; background:#0f1520; color:#c8d8e8; font-family: monospace; }
-    input, button { font-family: inherit; }
-    
+    body {
+      margin: 0;
+      background: #0f1520;
+      color: #c8d8e8;
+      font-family: monospace;
+    }
+    input, button {
+      font-family: inherit;
+    }
+    button {
+      background: #5cb88a;
+      border: none;
+      padding: 8px 12px;
+      margin-left: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
   </style>
 </head>
+
 <body>
   <div id="root"></div>
 
@@ -24,49 +44,76 @@
       const [data, setData] = useState([]);
       const [value, setValue] = useState("");
 
+      // Load from localStorage
       useEffect(() => {
-        const saved = localStorage.getItem("glucose");
-        if (saved) setData(JSON.parse(saved));
+        try {
+          const saved = localStorage.getItem("glucose");
+          if (saved) setData(JSON.parse(saved));
+        } catch (e) {
+          console.error("Load error", e);
+        }
       }, []);
 
       function add() {
-        if (!value) return;
-        const entry = { v: Number(value), t: new Date().toLocaleTimeString() };
+        const val = Number(value);
+        if (!val) return;
+
+        const entry = {
+          v: val,
+          t: new Date().toLocaleTimeString()
+        };
+
         const next = [entry, ...data];
         setData(next);
-        localStorage.setItem("glucose", JSON.stringify(next));
+
+        try {
+          localStorage.setItem("glucose", JSON.stringify(next));
+        } catch (e) {
+          console.error("Save error", e);
+        }
+
         setValue("");
       }
 
-      return (
-        React.createElement("div", { style:{padding:"20px"} },
-          React.createElement("h2", null, "Glucose Tracker"),
+      return React.createElement("div", { style: { padding: "20px" } },
 
+        React.createElement("h2", null, "Glucose Tracker"),
+
+        React.createElement("div", null,
           React.createElement("input", {
-            type:"number",
-            placeholder:"mg/dL",
-            value:value,
-            onChange:e=>setValue(e.target.value)
+            type: "number",
+            placeholder: "mg/dL",
+            value: value,
+            onChange: e => setValue(e.target.value),
+            style: { padding: "6px", fontSize: "16px" }
           }),
+          React.createElement("button", { onClick: add }, "Add")
+        ),
 
-          React.createElement("button", { onClick:add, style:{marginLeft:10} }, "Add"),
-
-          React.createElement("div", { style:{height:300, marginTop:20} },
-            React.createElement(ResponsiveContainer, null,
-              React.createElement(LineChart, { data:data.slice().reverse() },
-                React.createElement(CartesianGrid, { stroke:"#333" }),
-                React.createElement(XAxis, { dataKey:"t" }),
-                React.createElement(YAxis, null),
-                React.createElement(Tooltip, null),
-                React.createElement(Line, { type:"monotone", dataKey:"v", stroke:"#5cb88a" })
+        React.createElement("div", { style: { height: 300, marginTop: 30 } },
+          data.length === 0
+            ? React.createElement("div", { style: { color: "#3a5a70" } }, "No data yet")
+            : React.createElement(ResponsiveContainer, null,
+                React.createElement(LineChart, { data: data.slice().reverse() },
+                  React.createElement(CartesianGrid, { stroke: "#333" }),
+                  React.createElement(XAxis, { dataKey: "t" }),
+                  React.createElement(YAxis, null),
+                  React.createElement(Tooltip, null),
+                  React.createElement(Line, {
+                    type: "monotone",
+                    dataKey: "v",
+                    stroke: "#5cb88a",
+                    strokeWidth: 2
+                  })
+                )
               )
-            )
-          )
         )
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+    ReactDOM.createRoot(document.getElementById("root")).render(
+      React.createElement(App)
+    );
   </script>
 </body>
 </html>
